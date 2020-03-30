@@ -37,6 +37,31 @@ namespace FitnesCenter.Controllers
             return result;
         }
 
+        protected async Task<ObjectResult> CreateDataModelObjectResult<T>(Func<T, Task<ResultViewModel>> fillResultModelFunc, T parameter)
+        {
+            ObjectResult result;
+
+            ResultViewModel resultViewModel = await fillResultModelFunc.Invoke(parameter);
+
+            switch (resultViewModel.Flag)
+            {
+                case (int)HttpStatusCode.NotFound:
+                    result = new NotFoundObjectResult(resultViewModel.Information);
+                    break;
+                case (int)HttpStatusCode.BadRequest:
+                    result = new BadRequestObjectResult(resultViewModel.Information);
+                    break;
+                case (int)HttpStatusCode.OK:
+                    result = new OkObjectResult(resultViewModel.AdditionalInfo);
+                    break;
+                default:
+                    result = new BadRequestObjectResult(UNKNOWN_ERROR_MESSAGE);
+                    break;
+            }
+
+            return result;
+        }
+
         protected async Task<ObjectResult> CreateDataObjectResult(Func<Task<ResultViewModel>> fillResultModelFunc)
         {
             ObjectResult result;
@@ -89,6 +114,30 @@ namespace FitnesCenter.Controllers
 
 
 
+        protected async Task<ObjectResult> CreateInfoObjectResult<T>(Func<string, Task<ResultViewModel>> fillResultModelFunc, string email)
+        {
+            ObjectResult result;
+
+            ResultViewModel resultViewModel = await fillResultModelFunc.Invoke(email);
+
+            switch (resultViewModel.Flag)
+            {
+                case (int)HttpStatusCode.NotFound:
+                    result = new NotFoundObjectResult(resultViewModel.Information);
+                    break;
+                case (int)HttpStatusCode.BadRequest:
+                    result = new BadRequestObjectResult(resultViewModel.Information);
+                    break;
+                case (int)HttpStatusCode.OK:
+                    result = new OkObjectResult(resultViewModel.Information);
+                    break;
+                default:
+                    result = new BadRequestObjectResult(UNKNOWN_ERROR_MESSAGE);
+                    break;
+            }
+
+            return result;
+        }
 
         protected async Task<ObjectResult> CreateInfoObjectResult<T>(Func<string, T, Task<ResultViewModel>> fillResultModelFunc,
             string email, T parameter)

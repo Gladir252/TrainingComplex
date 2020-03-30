@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using FitnesCenter.VIewModels;
 using FitnesCenter.Services;
 using FitnesCenter.Interfaces;
+using System.Security.Claims;
 
 namespace FitnesCenter.Controllers
 {
@@ -30,7 +31,7 @@ namespace FitnesCenter.Controllers
         {
             if (!ModelState.IsValid) return new BadRequestObjectResult(ModelState.ErrorCount);
 
-            return await CreateInfoObjectResult(userService.RegistrationAsync, registrationViewModelPl);
+            return await CreateDataModelObjectResult(userService.RegistrationAsync, registrationViewModelPl);
         }
 
         [AllowAnonymous]
@@ -39,7 +40,16 @@ namespace FitnesCenter.Controllers
         {
             if (!ModelState.IsValid) return new BadRequestObjectResult(ModelState.ErrorCount);
 
-            return await CreateInfoObjectResult(userService.LoginAsync, loginViewModelPl);
+            return await CreateDataModelObjectResult(userService.LoginAsync, loginViewModelPl);
+        }
+
+        [Authorize(Roles = "Client")]
+        [HttpPut, Route("ChangePassword")]
+        public async Task<IActionResult> EditAddress([FromBody]ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid) return new BadRequestObjectResult(ModelState.ErrorCount);
+
+            return await CreateInfoObjectResult(userService.ChangePasswordAsync, User.FindFirstValue(ClaimTypes.Email), model);
         }
     }
 }

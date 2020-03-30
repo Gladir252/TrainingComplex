@@ -355,6 +355,10 @@ namespace FitnesCenter.Models
                     .IsRequired()
                     .HasMaxLength(50);
 
+                entity.Property(e => e.IsFirstEntry)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.LastName)
                     .IsRequired()
                     .HasMaxLength(50);

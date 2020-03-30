@@ -8,6 +8,7 @@ using FitnesCenter.Models;
 using Microsoft.EntityFrameworkCore;
 using FitnesCenter.BusinessModels;
 using FitnesCenter.Interfaces;
+using FitnesCenter.Extensions;
 
 namespace FitnesCenter.Services
 {
@@ -51,10 +52,13 @@ namespace FitnesCenter.Services
                 };
 
                 await Task.Run(() => DBContext.User.AddAsync(user));
+                await Task.Run(() => DBContext.SaveChangesAsync());
                 Task.WaitAll();
                 await Task.Run(() => AddClientAsync(user.Id));
 
-                return new ResultViewModel((int)HttpStatusCode.OK, new JwtCreater(user.Email, DBContext.Role.FirstOrDefaultAsync(e => e.Id == user.RoleId).Result.Name).GetJwt());
+                AdditionalLoginInformation additionalLoginInformation = new AdditionalLoginInformation(new JwtCreater(user.Email, DBContext.Role.FirstOrDefaultAsync(e => e.Id == user.RoleId).Result.Name).GetJwt());
+
+                return new ResultViewModel((int)HttpStatusCode.OK, "", null, additionalLoginInformation);
             }
             catch(Exception ex)
             {
@@ -64,20 +68,33 @@ namespace FitnesCenter.Services
 
         public async Task<ResultViewModel> LoginAsync(LoginViewModel loginViewModel)
         {
-            if (loginViewModel == null)
+            try
             {
-                return new ResultViewModel((int)HttpStatusCode.BadRequest, "Invalid request.");
+                if (loginViewModel == null)
+                {
+                    return new ResultViewModel((int)HttpStatusCode.BadRequest, "Invalid request.");
+                }
+
+                var currentUser = await DBContext.User.FirstOrDefaultAsync(e => e.Email == loginViewModel.Email && e.Password == new PasswordHasher(loginViewModel.Password).GetHash());
+                Task.WaitAll();
+
+                if (currentUser == null)
+                {
+                    return new ResultViewModel((int)HttpStatusCode.BadRequest, "Incorrect login or password.");
+                }
+
+                currentUser.Role = await DBContext.Role.FirstAsync(t => t.Id == currentUser.RoleId);
+                Task.WaitAll();
+
+                AdditionalLoginInformation additionalLoginInformation = new AdditionalLoginInformation(
+                        new JwtCreater(currentUser.Email,
+                        DBContext.Role.FirstOrDefaultAsync(e => e.Id == currentUser.RoleId).Result.Name).GetJwt(), "Login is OK", currentUser.IsFirstEntry, currentUser.Role.Name);
+                return new ResultViewModel((int)HttpStatusCode.OK, "", null, additionalLoginInformation);
             }
-
-            var currentUser = await DBContext.User.FirstOrDefaultAsync(e => e.Email == loginViewModel.Email && e.Password == new PasswordHasher(loginViewModel.Password).GetHash());
-
-            if (currentUser == null)
+            catch(Exception ex)
             {
-                return new ResultViewModel((int)HttpStatusCode.BadRequest, "Incorrect login or password.");
+                return new ResultViewModel((int)HttpStatusCode.InternalServerError, ex.Message);
             }
-
-            return new ResultViewModel((int)HttpStatusCode.OK, new JwtCreater(currentUser.Email,
-                    DBContext.Role.FirstOrDefaultAsync(e => e.Id == currentUser.RoleId).Result.Name).GetJwt());
         }
 
         private async Task AddClientAsync(int userId)
@@ -90,5 +107,36 @@ namespace FitnesCenter.Services
             Task.WaitAll();
             await Task.Run(() => DBContext.SaveChangesAsync());
         }
+
+        public async Task<ResultViewModel> ChangePasswordAsync(string email, ChangePasswordViewModel changePasswordViewModel)
+        {
+            try 
+            {
+                if (changePasswordViewModel == null)
+                {
+                    return new ResultViewModel((int)HttpStatusCode.BadRequest, "Invalid request.");
+                }
+
+                var currentUser = await DBContext.User.FirstOrDefaultAsync(e => e.Email == email && e.Password == new PasswordHasher(changePasswordViewModel.OldPassword).GetHash());
+
+                if (currentUser == null)
+                {
+                    return new ResultViewModel((int)HttpStatusCode.BadRequest, "Incorrect login or old password.");
+                }
+
+                PasswordHasher hasher = new PasswordHasher(changePasswordViewModel.NewPassword);
+
+                currentUser.Password = hasher.GetHash();
+
+                await Task.Run(() => DBContext.User.Update(currentUser));
+
+                return new ResultViewModel((int)HttpStatusCode.OK, "Password changed.");
+            }
+            catch(Exception ex)
+            {
+                return new ResultViewModel((int)HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
     }
 }

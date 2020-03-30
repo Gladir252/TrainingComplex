@@ -20,9 +20,10 @@ namespace FitnesCenter.Models
         public string ThirdName { get; set; }
         public byte[] Photo { get; set; }
         public string MobilePhone { get; set; }
-        public DateTime Birthday { get; set; }
+        public DateTime? Birthday { get; set; }
         public string AboutMe { get; set; }
         public int RoleId { get; set; }
+        public bool? IsFirstEntry { get; set; }
 
         public virtual Role Role { get; set; }
         public virtual ICollection<Client> Client { get; set; }

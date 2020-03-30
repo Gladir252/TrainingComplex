@@ -10,5 +10,6 @@ namespace FitnesCenter.Interfaces
     {
         Task<ResultViewModel> RegistrationAsync(ReistrationViewModel model);
         Task<ResultViewModel> LoginAsync(LoginViewModel model);
+        Task<ResultViewModel> ChangePasswordAsync(string email, ChangePasswordViewModel model);
     }
 }
