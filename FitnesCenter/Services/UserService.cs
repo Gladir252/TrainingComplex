@@ -56,9 +56,8 @@ namespace FitnesCenter.Services
                 Task.WaitAll();
                 await Task.Run(() => AddClientAsync(user.Id));
 
-                AdditionalLoginInformation additionalLoginInformation = new AdditionalLoginInformation(new JwtCreater(user.Email, DBContext.Role.FirstOrDefaultAsync(e => e.Id == user.RoleId).Result.Name).GetJwt());
-
-                return new ResultViewModel((int)HttpStatusCode.OK, "", null, additionalLoginInformation);
+                return new ResultViewModel((int)HttpStatusCode.OK, new JwtCreater(currentUser.Email,
+                        DBContext.Role.FirstOrDefaultAsync(e => e.Id == currentUser.RoleId).Result.Name, currentUser.IsFirstEntry.ToString()).GetJwt(), null);
             }
             catch(Exception ex)
             {
@@ -86,10 +85,8 @@ namespace FitnesCenter.Services
                 currentUser.Role = await DBContext.Role.FirstAsync(t => t.Id == currentUser.RoleId);
                 Task.WaitAll();
 
-                AdditionalLoginInformation additionalLoginInformation = new AdditionalLoginInformation(
-                        new JwtCreater(currentUser.Email,
-                        DBContext.Role.FirstOrDefaultAsync(e => e.Id == currentUser.RoleId).Result.Name).GetJwt(), "Login is OK", currentUser.IsFirstEntry, currentUser.Role.Name);
-                return new ResultViewModel((int)HttpStatusCode.OK, "", null, additionalLoginInformation);
+                return new ResultViewModel((int)HttpStatusCode.OK, new JwtCreater(currentUser.Email,
+                        DBContext.Role.FirstOrDefaultAsync(e => e.Id == currentUser.RoleId).Result.Name, currentUser.IsFirstEntry.ToString()).GetJwt(), null);
             }
             catch(Exception ex)
             {

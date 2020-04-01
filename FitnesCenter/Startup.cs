@@ -21,6 +21,7 @@ using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.Swagger;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FitnesCenter
 {
@@ -39,6 +40,26 @@ namespace FitnesCenter
         {
             services.AddScoped<IUser, UserService>();
             services.AddControllers();
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = true;////
+                options.SaveToken = true;/////
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,//
+                    ValidateAudience = false,//
+                    ValidateLifetime = true,//
+                    ValidateIssuerSigningKey = true,
+
+
+                    ValidIssuer = "https://localhost:44382",
+                    ValidAudience = "https://localhost:44382",
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtCreater.SECRET_KEY))
+                };
+
+            });
 
             services.AddCors(options =>
             {
@@ -83,51 +104,20 @@ namespace FitnesCenter
                 });
             });
 
+            //services.AddIdentity<IdentityUser, IdentityRole>()
+            //    .AddEntityFrameworkStores<TrComDBContext>()
+            //    .AddDefaultTokenProviders();
 
-            //services.AddSwaggerGen(c =>
+            //services.AddAuthorization(options =>
             //{
-            //    c.SwaggerDoc("v1", new Info { Title = "You api title", Version = "v1" });
-            //    c.AddSecurityDefinition("Bearer",
-            //        new ApiKeyScheme
-            //        {
-            //            In = "header",
-            //            Description = "Please enter into field the word 'Bearer' following by space and JWT",
-            //            Name = "Authorization",
-            //            Type = "apiKey"
-            //        });
-            //    c.AddSecurityRequirement(new Dictionary<string, IEnumerable<string>> {
-            //        { "Bearer", Enumerable.Empty<string>() },
-            //    });
-
+            //    options.DefaultPolicy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme)
+            //    .RequireAuthenticatedUser()
+            //    .Build();
             //});
 
 
-
-            //services.AddDefaultIdentity<User>().AddRoles<Role>();
-
-
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.RequireHttpsMetadata = false;////
-                options.SaveToken = true;/////
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = false,//
-                    ValidateAudience = false,//
-                    ValidateLifetime = true,//
-                    ValidateIssuerSigningKey = true,
-
-
-                    ValidIssuer = "http://localhost:50133",
-                    ValidAudience = "http://localhost:50133",
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtCreater.SECRET_KEY))
-                };
-
-            });
-
-            string connection = Configuration.GetConnectionString("DefaultConnection");
-            services.AddDbContext<TrComDBContext>(options => options.UseSqlServer(connection));
+            //string connection = Configuration.GetConnectionString("DefaultConnection");
+            //services.AddDbContext<TrComDBContext>(options => options.UseSqlServer(connection));
 
             //services.RegisterRepositories();
             //services.RegisterServices();
@@ -147,13 +137,6 @@ namespace FitnesCenter
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
-            app.UseRouting();
-
-            app.UseAuthorization();
-
             app.UseSwagger();
 
             app.UseSwaggerUI(c =>
@@ -161,6 +144,14 @@ namespace FitnesCenter
                 c.SwaggerEndpoint("/swagger/v1/swagger.json",
                     "Northwind Service API V1");
             });
+
+            app.UseStaticFiles();
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+            
+            app.UseHttpsRedirection();
 
             app.UseEndpoints(endpoints =>
             {

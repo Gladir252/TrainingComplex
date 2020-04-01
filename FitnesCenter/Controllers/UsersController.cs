@@ -31,7 +31,7 @@ namespace FitnesCenter.Controllers
         {
             if (!ModelState.IsValid) return new BadRequestObjectResult(ModelState.ErrorCount);
 
-            return await CreateDataModelObjectResult(userService.RegistrationAsync, registrationViewModelPl);
+            return await CreateInfoObjectResult(userService.RegistrationAsync, registrationViewModelPl);
         }
 
         [AllowAnonymous]
@@ -40,16 +40,24 @@ namespace FitnesCenter.Controllers
         {
             if (!ModelState.IsValid) return new BadRequestObjectResult(ModelState.ErrorCount);
 
-            return await CreateDataModelObjectResult(userService.LoginAsync, loginViewModelPl);
+            return await CreateInfoObjectResult(userService.LoginAsync, loginViewModelPl);
         }
 
         [Authorize(Roles = "Client")]
+        [Authorize(Roles = "Trainer")]
         [HttpPut, Route("ChangePassword")]
         public async Task<IActionResult> EditAddress([FromBody]ChangePasswordViewModel model)
         {
             if (!ModelState.IsValid) return new BadRequestObjectResult(ModelState.ErrorCount);
 
             return await CreateInfoObjectResult(userService.ChangePasswordAsync, User.FindFirstValue(ClaimTypes.Email), model);
+        }
+
+        [Authorize]
+        [HttpGet, Route("GetOk")]
+        public async Task<IActionResult> GetOk()
+        {
+            return Ok(User.Identity.IsAuthenticated);
         }
     }
 }

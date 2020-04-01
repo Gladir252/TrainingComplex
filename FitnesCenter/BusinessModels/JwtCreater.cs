@@ -11,10 +11,11 @@ namespace FitnesCenter.BusinessModels
     {
         public const string SECRET_KEY = "superSecretKey@345";
 
-        public JwtCreater(string email, string role)
+        public JwtCreater(string email, string role, string isFirstEntry)
         {
             Email = email;
             Role = role;
+            IsFirstEntry = isFirstEntry;
         }
 
         public string GetJwt()
@@ -23,12 +24,13 @@ namespace FitnesCenter.BusinessModels
             var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
             var tokeOptions = new JwtSecurityToken(
-                issuer: "http://localhost:50133",
-                audience: "http://localhost:50133",
+                issuer: "https://localhost:44382",
+                audience: "https://localhost:44382",
                 claims: new List<Claim>()
                 {
                     new Claim(ClaimTypes.Email, Email),//
-                    new Claim(ClaimTypes.Role, Role),//
+                    new Claim(ClaimTypes.Role, Role),
+                    new Claim("IsFirstEntry", IsFirstEntry)//
                 },
                 expires: DateTime.Now.AddMinutes(99900),
                 signingCredentials: signinCredentials
@@ -41,5 +43,6 @@ namespace FitnesCenter.BusinessModels
 
         private string Role { get; }
         private string Email { get; }
+        private string IsFirstEntry { get; }
     }
 }
